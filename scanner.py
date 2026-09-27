@@ -97,6 +97,11 @@ def main():
         help="Nombre de connexions simultanées (défaut : 50)"
     )
 
+    parser.add_argument(
+        "--output",
+        help="Fichier texte dans lequel enregistrer les résultats"
+    )
+
     args = parser.parse_args()
 
     if not validate_ip(args.ip):
@@ -136,7 +141,7 @@ def main():
         for port, is_open in results:
             if is_open:
                 service = get_service_name(port)
-                open_ports.append(port)
+                open_ports.append((port, service))
 
                 print(
                     f"[+] Port {port} ouvert — {service}"
@@ -150,6 +155,40 @@ def main():
         print(
             f"{len(open_ports)} port(s) ouvert(s) trouvé(s)."
         )
+
+    if args.output:
+        try:
+            with open(args.output, "w", encoding="utf-8") as report:
+                report.write("Network Port Scanner\n")
+                report.write("=" * 50 + "\n")
+                report.write(f"Cible : {args.ip}\n")
+                report.write(
+                    f"Ports : {args.start_port}-{args.end_port}\n"
+                )
+                report.write(f"Timeout : {args.timeout} seconde(s)\n")
+                report.write(f"Workers : {args.workers}\n")
+                report.write("\n")
+
+                if not open_ports:
+                    report.write("Aucun port ouvert trouvé.\n")
+                else:
+                    report.write("Ports ouverts :\n")
+                    for port, service in open_ports:
+                        report.write(
+                            f"- Port {port} — {service} — OPEN\n"
+                        )
+
+                report.write("\n")
+                report.write(
+                    f"Total : {len(open_ports)} port(s) ouvert(s)\n"
+                )
+
+            print(f"Rapport enregistré dans : {args.output}")
+
+        except OSError as error:
+            print(
+                f"Erreur lors de l'enregistrement du rapport : {error}"
+            )
 
 
 if __name__ == "__main__":
