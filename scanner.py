@@ -1,6 +1,7 @@
-import socket
 import argparse
 import ipaddress
+import logging
+import socket
 from concurrent.futures import ThreadPoolExecutor
 
 
@@ -25,6 +26,17 @@ COMMON_SERVICES = {
 }
 
 
+logger = logging.getLogger(__name__)
+
+
+def configure_logging():
+    """Configure le système de journalisation."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(levelname)s: %(message)s"
+    )
+
+
 def get_service_name(port):
     """Retourne le nom du service associé au port."""
     return COMMON_SERVICES.get(port, "Service inconnu")
@@ -39,7 +51,12 @@ def scan_port(ip, port, timeout):
 
         return port, result == 0
 
-    except socket.error:
+    except socket.error as error:
+        logger.debug(
+            "Erreur lors du scan du port %s : %s",
+            port,
+            error
+        )
         return port, False
 
 
@@ -94,7 +111,8 @@ def scan_ports(ip, start_port, end_port, timeout, workers):
                     service = get_service_name(port)
                     open_ports.append((port, service))
 
-    except (OSError, ValueError):
+    except (OSError, ValueError) as error:
+        logger.error("Erreur pendant le scan : %s", error)
         return []
 
     return open_ports
@@ -137,11 +155,18 @@ def save_report(
 
         return True
 
-    except OSError:
+    except OSError as error:
+        logger.error(
+            "Impossible d'enregistrer le rapport : %s",
+            error
+        )
         return False
 
 
 def main():
+    """Point d'entrée principal du programme."""
+    configure_logging()
+
     parser = argparse.ArgumentParser(
         description="Simple concurrent TCP port scanner"
     )
@@ -185,28 +210,37 @@ def main():
     args = parser.parse_args()
 
     if not validate_ip(args.ip):
-        print(f"Erreur : adresse IP invalide : {args.ip}")
+        logger.error("Adresse IP invalide : %s", args.ip)
         return
 
     if not validate_ports(args.start_port, args.end_port):
-        print(
-            "Erreur : les ports doivent être compris entre 1 et 65535 "
-            "et le port de début doit être inférieur ou égal au port de fin."
+        logger.error(
+            "Plage de ports invalide : les ports doivent être "
+            "compris entre 1 et 65535 et le port de début doit "
+            "être inférieur ou égal au port de fin."
         )
         return
 
     if not validate_timeout(args.timeout):
-        print("Erreur : le timeout doit être supérieur à 0.")
+        logger.error("Le timeout doit être supérieur à 0.")
         return
 
     if not validate_workers(args.workers):
-        print("Erreur : le nombre de workers doit être supérieur à 0.")
+        logger.error("Le nombre de workers doit être supérieur à 0.")
         return
 
-    print(f"Scan de {args.ip} : ports {args.start_port}-{args.end_port}")
-    print(f"Timeout : {args.timeout} seconde(s)")
-    print(f"Workers : {args.workers}")
-    print("-" * 50)
+    logger.info(
+        "Scan de %s : ports %s-%s",
+        args.ip,
+        args.start_port,
+        args.end_port
+    )
+
+    logger.info(
+        "Timeout : %s seconde(s) | Workers : %s",
+        args.timeout,
+        args.workers
+    )
 
     open_ports = scan_ports(
         args.ip,
@@ -217,17 +251,18 @@ def main():
     )
 
     for port, service in open_ports:
-        print(
-            f"[+] Port {port} ouvert — {service}"
+        logger.info(
+            "Port %s ouvert — %s",
+            port,
+            service
         )
 
-    print("-" * 50)
-
     if not open_ports:
-        print("Aucun port ouvert trouvé.")
+        logger.info("Aucun port ouvert trouvé.")
     else:
-        print(
-            f"{len(open_ports)} port(s) ouvert(s) trouvé(s)."
+        logger.info(
+            "%s port(s) ouvert(s) trouvé(s).",
+            len(open_ports)
         )
 
     if args.output:
@@ -240,13 +275,9 @@ def main():
             args.workers,
             open_ports
         ):
-            print(
-                f"Rapport enregistré dans : {args.output}"
-            )
-        else:
-            print(
-                f"Erreur lors de l'enregistrement du rapport : "
-                f"{args.output}"
+            logger.info(
+                "Rapport enregistré dans : %s",
+                args.output
             )
 
 
