@@ -4,9 +4,9 @@ import ipaddress
 from concurrent.futures import ThreadPoolExecutor
 
 
-def scan_port(ip, port):
+def scan_port(ip, port, timeout):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(1)
+    sock.settimeout(timeout)
 
     result = sock.connect_ex((ip, port))
 
@@ -58,6 +58,13 @@ def main():
         help="Dernier port à scanner"
     )
 
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=1.0,
+        help="Délai d'attente en secondes (défaut : 1.0)"
+    )
+
     args = parser.parse_args()
 
     if not validate_ip(args.ip):
@@ -71,7 +78,12 @@ def main():
         )
         return
 
+    if args.timeout <= 0:
+        print("Erreur : le timeout doit être supérieur à 0.")
+        return
+
     print(f"Scan de {args.ip} : ports {args.start_port}-{args.end_port}")
+    print(f"Timeout : {args.timeout} seconde(s)")
     print("-" * 40)
 
     open_ports = []
@@ -80,7 +92,7 @@ def main():
 
     with ThreadPoolExecutor(max_workers=50) as executor:
         results = executor.map(
-            lambda port: scan_port(args.ip, port),
+            lambda port: scan_port(args.ip, port, args.timeout),
             ports
         )
 
