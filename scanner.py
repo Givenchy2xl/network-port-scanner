@@ -65,6 +65,13 @@ def main():
         help="Délai d'attente en secondes (défaut : 1.0)"
     )
 
+    parser.add_argument(
+        "--workers",
+        type=int,
+        default=50,
+        help="Nombre de connexions simultanées (défaut : 50)"
+    )
+
     args = parser.parse_args()
 
     if not validate_ip(args.ip):
@@ -82,15 +89,20 @@ def main():
         print("Erreur : le timeout doit être supérieur à 0.")
         return
 
+    if args.workers <= 0:
+        print("Erreur : le nombre de workers doit être supérieur à 0.")
+        return
+
     print(f"Scan de {args.ip} : ports {args.start_port}-{args.end_port}")
     print(f"Timeout : {args.timeout} seconde(s)")
+    print(f"Workers : {args.workers}")
     print("-" * 40)
 
     open_ports = []
 
     ports = range(args.start_port, args.end_port + 1)
 
-    with ThreadPoolExecutor(max_workers=50) as executor:
+    with ThreadPoolExecutor(max_workers=args.workers) as executor:
         results = executor.map(
             lambda port: scan_port(args.ip, port, args.timeout),
             ports
