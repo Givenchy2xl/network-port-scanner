@@ -1,6 +1,7 @@
 import socket
 import argparse
 import ipaddress
+from concurrent.futures import ThreadPoolExecutor
 
 
 def scan_port(ip, port):
@@ -11,7 +12,7 @@ def scan_port(ip, port):
 
     sock.close()
 
-    return result == 0
+    return port, result == 0
 
 
 def validate_ip(ip):
@@ -37,7 +38,7 @@ def validate_ports(start_port, end_port):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Simple TCP port scanner"
+        description="Simple concurrent TCP port scanner"
     )
 
     parser.add_argument(
@@ -73,19 +74,29 @@ def main():
     print(f"Scan de {args.ip} : ports {args.start_port}-{args.end_port}")
     print("-" * 40)
 
-    open_ports = 0
+    open_ports = []
 
-    for port in range(args.start_port, args.end_port + 1):
-        if scan_port(args.ip, port):
-            print(f"[+] Port {port} ouvert")
-            open_ports += 1
+    ports = range(args.start_port, args.end_port + 1)
+
+    with ThreadPoolExecutor(max_workers=50) as executor:
+        results = executor.map(
+            lambda port: scan_port(args.ip, port),
+            ports
+        )
+
+        for port, is_open in results:
+            if is_open:
+                open_ports.append(port)
+                print(f"[+] Port {port} ouvert")
 
     print()
 
-    if open_ports == 0:
+    if not open_ports:
         print("Aucun port ouvert trouvé.")
     else:
-        print(f"{open_ports} port(s) ouvert(s) trouvé(s).")
+        print(
+            f"{len(open_ports)} port(s) ouvert(s) trouvé(s)."
+        )
 
 
 if __name__ == "__main__":
