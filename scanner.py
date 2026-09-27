@@ -4,6 +4,31 @@ import ipaddress
 from concurrent.futures import ThreadPoolExecutor
 
 
+COMMON_SERVICES = {
+    20: "FTP-Data",
+    21: "FTP",
+    22: "SSH",
+    23: "Telnet",
+    25: "SMTP",
+    53: "DNS",
+    80: "HTTP",
+    88: "Kerberos",
+    110: "POP3",
+    143: "IMAP",
+    443: "HTTPS",
+    445: "SMB",
+    3306: "MySQL",
+    3389: "RDP",
+    5432: "PostgreSQL",
+    6379: "Redis",
+    8080: "HTTP-Proxy",
+}
+
+
+def get_service_name(port):
+    return COMMON_SERVICES.get(port, "Service inconnu")
+
+
 def scan_port(ip, port, timeout):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.settimeout(timeout)
@@ -96,7 +121,7 @@ def main():
     print(f"Scan de {args.ip} : ports {args.start_port}-{args.end_port}")
     print(f"Timeout : {args.timeout} seconde(s)")
     print(f"Workers : {args.workers}")
-    print("-" * 40)
+    print("-" * 50)
 
     open_ports = []
 
@@ -110,10 +135,14 @@ def main():
 
         for port, is_open in results:
             if is_open:
+                service = get_service_name(port)
                 open_ports.append(port)
-                print(f"[+] Port {port} ouvert")
 
-    print()
+                print(
+                    f"[+] Port {port} ouvert — {service}"
+                )
+
+    print("-" * 50)
 
     if not open_ports:
         print("Aucun port ouvert trouvé.")
