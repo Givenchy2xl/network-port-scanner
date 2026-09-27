@@ -1,4 +1,5 @@
 import socket
+import argparse
 
 
 def scan_port(ip, port):
@@ -11,13 +12,30 @@ def scan_port(ip, port):
 
     return result == 0
 
-if __name__ == "__main__":
-    ip = "127.0.0.1"
-    port = 22
 
-    if scan_port(ip, port):
-        print(f"Port {port} ouvert")
+def main():
+    parser = argparse.ArgumentParser(
+        description="Simple TCP port scanner"
+    )
+
+    parser.add_argument(
+        "ip",
+        help="Adresse IP de la cible"
+    )
+
+    parser.add_argument(
+        "port",
+        type=int,
+        help="Port TCP à tester"
+    )
+
+    args = parser.parse_args()
+
+    if scan_port(args.ip, args.port):
+        print(f"Port {args.port} ouvert sur {args.ip}")
     else:
-        print(f"Port {port} fermé")
+        print(f"Port {args.port} fermé sur {args.ip}")
 
 
+if __name__ == "__main__":
+    main()
