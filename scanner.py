@@ -24,17 +24,35 @@ def main():
     )
 
     parser.add_argument(
-        "port",
+        "start_port",
         type=int,
-        help="Port TCP à tester"
+        help="Premier port à scanner"
+    )
+
+    parser.add_argument(
+        "end_port",
+        type=int,
+        help="Dernier port à scanner"
     )
 
     args = parser.parse_args()
 
-    if scan_port(args.ip, args.port):
-        print(f"Port {args.port} ouvert sur {args.ip}")
+    print(f"Scan de {args.ip} : ports {args.start_port}-{args.end_port}")
+    print("-" * 40)
+
+    open_ports = 0
+
+    for port in range(args.start_port, args.end_port + 1):
+        if scan_port(args.ip, port):
+            print(f"[+] Port {port} ouvert")
+            open_ports += 1
+
+    print()
+
+    if open_ports == 0:
+        print("Aucun port ouvert trouvé.")
     else:
-        print(f"Port {args.port} fermé sur {args.ip}")
+        print(f"{open_ports} port(s) ouvert(s) trouvé(s).")
 
 
 if __name__ == "__main__":
