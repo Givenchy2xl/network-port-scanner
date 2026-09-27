@@ -1,5 +1,6 @@
 import socket
 import argparse
+import ipaddress
 
 
 def scan_port(ip, port):
@@ -11,6 +12,27 @@ def scan_port(ip, port):
     sock.close()
 
     return result == 0
+
+
+def validate_ip(ip):
+    try:
+        ipaddress.ip_address(ip)
+        return True
+    except ValueError:
+        return False
+
+
+def validate_ports(start_port, end_port):
+    if not 1 <= start_port <= 65535:
+        return False
+
+    if not 1 <= end_port <= 65535:
+        return False
+
+    if start_port > end_port:
+        return False
+
+    return True
 
 
 def main():
@@ -36,6 +58,17 @@ def main():
     )
 
     args = parser.parse_args()
+
+    if not validate_ip(args.ip):
+        print(f"Erreur : adresse IP invalide : {args.ip}")
+        return
+
+    if not validate_ports(args.start_port, args.end_port):
+        print(
+            "Erreur : les ports doivent être compris entre 1 et 65535 "
+            "et le port de début doit être inférieur ou égal au port de fin."
+        )
+        return
 
     print(f"Scan de {args.ip} : ports {args.start_port}-{args.end_port}")
     print("-" * 40)
