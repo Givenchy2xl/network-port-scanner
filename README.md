@@ -1,6 +1,6 @@
 # 🔎 Network Port Scanner
 
-Un scanner de ports TCP développé en Python dans le cadre d'un portfolio en **Réseaux et 
+Un scanner de ports TCP développé en Python **Réseaux et 
 Cybersécurité**.
 
 Le projet permet d'analyser une cible autorisée, d'identifier les ports TCP ouverts, d'associer 
